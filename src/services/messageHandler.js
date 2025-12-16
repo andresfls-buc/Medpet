@@ -17,12 +17,13 @@ export const handleMessage = async (message, name = "amigo") => {
     const text = normalizeText(message.text.body.trim());
 
     // Saludo
-    if (isGreetings(text)) {
-      return sendTextMessage(
-        from,
-        `Hola, ${name} Bienvenido a nuestro servicio de veterinaria online . ¿Cómo puedo ayudarte?`
-      );
-    }
+   if (isGreetings(text)) {
+  return sendButtonMessage(
+    from,
+    `👋 Hola *${name}*, bienvenido a nuestro servicio de veterinaria online 🐾\n\n¿En qué puedo ayudarte?`
+  );
+}
+
 
     // Imagen
     if (text === "imagen") {
@@ -44,11 +45,14 @@ export const handleMessage = async (message, name = "amigo") => {
     const buttonId = message.interactive.button_reply.id;
 
     if (buttonId === "BTN_1") {
-      return sendTextMessage(from, "Elegiste Botón 1");
+      return sendTextMessage(from, "Agendaste una cita");
     }
 
     if (buttonId === "BTN_2") {
-      return sendTextMessage(from, "Elegiste Botón 2");
+      return sendTextMessage(from, "Estos son nuestros servicios");
+    }
+    if (buttonId === "BTN_3") {
+      return sendTextMessage(from, "Un agente se pondrá en contacto contigo pronto");
     }
 
     return sendTextMessage(from, "Opción no reconocida");
