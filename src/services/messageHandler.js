@@ -4,66 +4,92 @@ import {
 } from "./whatsappService.js";
 
 import { isGreetings } from "../utils/isGreetings.js";
+import {
+  startAppointmentFlow,
+  handleAppointmentFlow,
+  handleAppointmentButtons,
+} from "./appointmentFlow.js";
 
-// Normaliza el texto para evitar problemas con mayúsculas y acentos
+import { userSessions } from "../utils/userSessions.js";
+
+// ====================
+// NORMALIZA TEXTO
+// ====================
 const normalizeText = (str) =>
   str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+// ====================
+// MESSAGE HANDLER
+// ====================
 export const handleMessage = async (message, name = "amigo") => {
   const from = message.from;
 
-  // --------------------
-  // MANEJO DE MENSAJES DE TEXTO
-  // --------------------
+  // ====================
+  // MENSAJES DE TEXTO
+  // ====================
   if (message.type === "text") {
-    // Se obtiene y normaliza el texto
     const text = normalizeText(message.text.body.trim());
 
-    // Si el mensaje es un saludo, se envía el menú con botones
+    //  PRIORIDAD TOTAL: si hay sesión activa, NO evaluar saludos
+    if (userSessions[from]) {
+      return handleAppointmentFlow(from, message.text.body);
+    }
+
+    //  Saludo → mostrar menú principal
     if (isGreetings(text)) {
       return sendButtonMessage(
         from,
-        `Hola  ${name} 👋, bienvenido a nuestro servicio de veterinaria online. 🐾 \n\n¿En qué puedo ayudarte?`
+        `Hola ${name} 👋 Bienvenido a nuestra veterinaria 🐾\n\n¿En qué puedo ayudarte?`,
+        [
+          { id: "BTN_1", title: "🗓️ Agendar cita" },
+          { id: "BTN_2", title: "📋 Ver servicios" },
+          { id: "BTN_3", title: "👤 Hablar con un agente" },
+        ]
       );
     }
 
-    // Para cualquier otro texto no se responde nada
-    // Esto evita eco
+    // Texto fuera de flujo y sin saludo
     return null;
   }
 
-  // --------------------
-  // MANEJO DE BOTONES INTERACTIVOS
-  // --------------------
+  // ====================
+  // BOTONES INTERACTIVOS
+  // ====================
   if (message.type === "interactive") {
-    // Se obtiene el id del botón presionado
     const buttonId = message.interactive.button_reply.id;
 
-    // Acción botón 1
+    //  PRIORIDAD TOTAL: botones del flujo
+    if (userSessions[from]) {
+      return handleAppointmentButtons(from, buttonId);
+    }
+
+    //  Agendar cita (menú principal)
     if (buttonId === "BTN_1") {
-      return sendTextMessage(from, "Agendaste una cita");
+      return startAppointmentFlow(from);
     }
 
-    // Acción botón 2
+    //  Servicios
     if (buttonId === "BTN_2") {
-      return sendTextMessage(from, "Estos son nuestros servicios");
-    }
-
-    // Acción botón 3
-    if (buttonId === "BTN_3") {
       return sendTextMessage(
         from,
-        "Un agente se pondrá en contacto contigo pronto"
+        "🐶 Consulta general\n🐱 Vacunación\n🩺 Emergencias\n✂️ Grooming"
       );
     }
 
-    // Si el botón no coincide con ninguno
-    return sendTextMessage(from, "Opción no reconocida");
+    // 👤 Agente humano
+    if (buttonId === "BTN_3") {
+      return sendTextMessage(
+        from,
+        "👤 Un agente se pondrá en contacto contigo pronto."
+      );
+    }
+
+    return null;
   }
 
-  // --------------------
-  // OTROS TIPOS DE MENSAJE
-  // --------------------
+  // ====================
+  // OTROS TIPOS
+  // ====================
   console.log("Tipo de mensaje no manejado:", message.type);
   return null;
 };

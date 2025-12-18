@@ -11,17 +11,7 @@ export const sendTextMessage = async (to, text) => {
 
   return callWhatsAppAPI(body);
 };
-//Servicio para enviar imagenes a través de la API de WhatsApp
-export const sendImageMessage = async (to, imageUrl) => {
-  const body = {
-    messaging_product: "whatsapp",
-    to,
-    type: "image",
-    image: { link: imageUrl },
-  };
 
-  return callWhatsAppAPI(body);
-};
 
 //Servicio para enviar botones a través de la API de WhatsApp
 export const sendButtonMessage = async (to , text) => {
