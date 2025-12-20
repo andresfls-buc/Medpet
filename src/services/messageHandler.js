@@ -39,7 +39,7 @@ export const handleMessage = async (message, name = "amigo") => {
     if (isGreetings(text)) {
       return sendButtonMessage(
         from,
-        `Hola ${name} 👋 Bienvenido a nuestra veterinaria 🐾\n\n¿En qué puedo ayudarte?`,
+        `Hola ${name} 👋 Bienvenido a nuestra veterinaria online 🐾\n\n¿En qué puedo ayudarte?`,
         [
           { id: "BTN_1", title: "🗓️ Agendar cita" },
           { id: "BTN_2", title: "📋 Ver servicios" },
