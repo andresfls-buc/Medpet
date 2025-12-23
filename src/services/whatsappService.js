@@ -25,8 +25,8 @@ export const sendButtonMessage = async (to , text) => {
       action: {
         buttons: [
           { type: "reply", reply: { id: "BTN_1", title: "Agendar una cita" } },
-          { type: "reply", reply: { id: "BTN_2", title: "Servicios" } },
-          { type: "reply", reply: { id: "BTN_3", title: "Hablar con un agente" } },
+          { type: "reply", reply: { id: "BTN_2", title: "Consultar" } },
+          { type: "reply", reply: { id: "BTN_3", title: "Ubicación" } },
         ],
       },
     },
