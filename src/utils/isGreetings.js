@@ -7,6 +7,7 @@ export const isGreetings = (text = "") => {
     "buenos dias",
     "buenas tardes",
     "buenas noches",
+    "cordial saludo",
   ];
 
   const normalizedText = text

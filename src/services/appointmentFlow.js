@@ -10,6 +10,7 @@ import appendToSheet from "./googleSheetsService.js"; // Ruta corregida: misma c
 export const startAppointmentFlow = async (from) => {
   // Crea una sesión nueva para el usuario
   userSessions[from] = {
+    type: "APPOINTMENT", // Tipo de sesión
     step: "ASK_NAME", // Paso actual del flujo
     data: {},         // Aquí se guardan los datos del usuario
   };
@@ -86,7 +87,7 @@ export const handleAppointmentFlow = async (from, text) => {
         from,
         `✅ *Cita confirmada*\n\n` +
         ` Dueño: ${ownerName}\n` +
-        `Mascota: ${petName}\n` +
+        ` Mascota: ${petName}\n` +
         ` Tipo: ${petType}\n` +
         ` Motivo: ${reason}\n` +
         ` Fecha: ${date}\n` +

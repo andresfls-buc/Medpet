@@ -11,6 +11,7 @@ import {
 } from "./appointmentFlow.js";
 
 import { userSessions } from "../utils/userSessions.js";
+import { askOpenAI } from "./openAiService.js";
 
 // ====================
 // NORMALIZA TEXTO
@@ -28,68 +29,93 @@ export const handleMessage = async (message, name = "amigo") => {
   // MENSAJES DE TEXTO
   // ====================
   if (message.type === "text") {
-    const text = normalizeText(message.text.body.trim());
+    const rawText = message.text.body.trim();
+    const text = normalizeText(rawText);
 
-    //  PRIORIDAD TOTAL: si hay sesión activa, NO evaluar saludos
-    if (userSessions[from]) {
-      return handleAppointmentFlow(from, message.text.body);
+    // ====================
+    // FLUJO DE CITAS
+    // ====================
+    if (userSessions[from]?.type === "APPOINTMENT") {
+      return handleAppointmentFlow(from, rawText);
     }
 
-    //  Saludo → mostrar menú principal
-    if (isGreetings(text)) {
+    // ====================
+    // CONSULTA CON IA (SIN FEEDBACK)
+    // ====================
+    if (userSessions[from]?.type === "CONSULTATION") {
+      let responseText;
+
+      try {
+        responseText = await askOpenAI(rawText);
+      } catch (e) {
+        responseText =
+          "⚠️ No pude procesar tu consulta en este momento. Si los síntomas continúan, acude a un veterinario.";
+      }
+
+      // Respondemos y TERMINAMOS el flujo
+      await sendTextMessage(from, responseText);
+
+      // Cerramos sesión para evitar loops
+      delete userSessions[from];
+      return;
+    }
+
+    // ====================
+    // SALUDO → MENÚ (UNA SOLA VEZ)
+    // ====================
+    if (isGreetings(text) && !userSessions[from]) {
+      userSessions[from] = { type: "MENU_USED" };
+
       return sendButtonMessage(
         from,
-        `Hola ${name} 👋 Bienvenido a nuestra veterinaria online 🐾\n\n¿En qué puedo ayudarte?`,
+        `Hola ${name} 👋 Bienvenido a nuestra veterinaria online\n\n¿En qué puedo ayudarte?`,
         [
-          { id: "BTN_1", title: "🗓️ Agendar cita" },
-          { id: "BTN_2", title: "📋 Ver servicios" },
-          { id: "BTN_3", title: "👤 Hablar con un agente" },
+          { id: "BTN_1", title: "Agendar cita" },
+          { id: "BTN_2", title: "Consultar" },
+          { id: "BTN_3", title: "Ubicación" },
         ]
       );
     }
 
-    // Texto fuera de flujo y sin saludo
-    return null;
+    return;
   }
 
   // ====================
-  // BOTONES INTERACTIVOS
+  // BOTONES
   // ====================
   if (message.type === "interactive") {
-    const buttonId = message.interactive.button_reply.id;
+    const buttonId =
+      message.interactive?.button_reply?.id ||
+      message.interactive?.list_reply?.id;
 
-    //  PRIORIDAD TOTAL: botones del flujo
-    if (userSessions[from]) {
-      return handleAppointmentButtons(from, buttonId);
-    }
-
-    //  Agendar cita (menú principal)
+    // Agendar cita
     if (buttonId === "BTN_1") {
+      userSessions[from] = { type: "APPOINTMENT" };
       return startAppointmentFlow(from);
     }
 
-    //  Servicios
+    // Consultar
     if (buttonId === "BTN_2") {
+      userSessions[from] = { type: "CONSULTATION" };
       return sendTextMessage(
         from,
-        "🐶 Consulta general\n🐱 Vacunación\n🩺 Emergencias\n✂️ Grooming"
+        "🩺 Escribe qué le ocurre a tu mascota y te ayudaré."
       );
     }
 
-    // 👤 Agente humano
+    // Ubicación
     if (buttonId === "BTN_3") {
       return sendTextMessage(
         from,
-        "👤 Un agente se pondrá en contacto contigo pronto."
+        "📍 Calle Principal 123\n⏰ Horario: 9am – 6pm"
       );
     }
 
-    return null;
-  }
+    // Botones del flujo de citas
+    if (userSessions[from]?.type === "APPOINTMENT") {
+      return handleAppointmentButtons(from, buttonId);
+    }
 
-  // ====================
-  // OTROS TIPOS
-  // ====================
-  console.log("Tipo de mensaje no manejado:", message.type);
-  return null;
+    return;
+  }
 };
