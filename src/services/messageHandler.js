@@ -1,6 +1,7 @@
 import {
   sendTextMessage,
   sendButtonMessage,
+  sendLocationMessage
 } from "./whatsappService.js";
 
 import { isGreetings } from "../utils/isGreetings.js";
@@ -105,9 +106,15 @@ export const handleMessage = async (message, name = "amigo") => {
 
     // Ubicación
     if (buttonId === "BTN_3") {
+      await sendLocationMessage(
+        from,
+        4.710989, 
+        -74.072090,
+        "📍 Calle Principal 123\n⏰ Horario: 9am – 6pm"
+      );
       return sendTextMessage(
         from,
-        "📍 Calle Principal 123\n⏰ Horario: 9am – 6pm"
+        "Nuestra veterinaria está ubicada en Calle Principal 123. Estamos abiertos de lunes a viernes de 9am a 6pm. https://www.google.com/maps?q=4.710989,-74.072090"
       );
     }
 

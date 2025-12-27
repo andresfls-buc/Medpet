@@ -35,6 +35,28 @@ export const sendButtonMessage = async (to , text) => {
   return callWhatsAppAPI(payload);
 };
 
+// MENSAJE DE UBICACION 
+export const sendLocationMessage = async (
+  to,
+  latitude,
+  longitude,
+  name = "Veterinaria MedPet"
+) => {
+  const body = {
+    messaging_product: "whatsapp",
+    to,
+    type: "location",
+    location: {
+      latitude,
+      longitude,
+      name,
+      address: "Calle Principal 123, Ciudad, País",
+    },
+  };
+
+  return callWhatsAppAPI(body);
+}
+
 // Función genérica para llamar a la API de WhatsApp
 const callWhatsAppAPI = async (body) => {
   const res = await fetch(`https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}/messages`, {
