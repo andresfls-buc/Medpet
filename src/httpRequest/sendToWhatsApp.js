@@ -6,6 +6,9 @@ import {
   API_VERSION,
 } from "../config/env.js";
 
+// Base URL de la API de WhatsApp
+const BASE_URL = `https://graph.facebook.com/${API_VERSION}`;
+
 /**
  * Función única para enviar requests a la API de WhatsApp
  * @param {Object} body - Payload del mensaje
@@ -13,7 +16,7 @@ import {
 export const sendToWhatsApp = async (body) => {
   try {
     const res = await fetch(
-      `https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}/messages`,
+      `${BASE_URL}/${PHONE_NUMBER_ID}/messages`,
       {
         method: "POST",
         headers: {
