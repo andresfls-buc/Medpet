@@ -1,7 +1,8 @@
 import {
   sendTextMessage,
   sendButtonMessage,
-  sendLocationMessage
+  sendLocationMessage,
+  sendEmergencyContact
 } from "./whatsappService.js";
 
 import { isGreetings } from "../utils/isGreetings.js";
@@ -14,6 +15,11 @@ import {
 import { userSessions } from "../utils/userSessions.js";
 import { askOpenAI } from "./openAiService.js";
 
+import {
+  sendFeedbackMenu,
+  handleFeedbackText
+} from "./feedbackFlow.js";
+
 // ====================
 // NORMALIZA TEXTO
 // ====================
@@ -21,60 +27,88 @@ const normalizeText = (str) =>
   str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 // ====================
-// MESSAGE HANDLER
+// DETECTA EMERGENCIAS
+// ====================
+const isEmergencyResponse = (text) => {
+  const keywords = [
+    "emergencia",
+    "urgente",
+    "no respira",
+    "convulsion",
+    "convulsión",
+    "sangrado",
+    "inconsciente",
+    "envenenamiento",
+    "grave",
+    "ataque",
+  ];
+  return keywords.some(k => text.includes(k));
+};
+
+// ====================
+// HANDLE MESSAGE
 // ====================
 export const handleMessage = async (message, name = "amigo") => {
   const from = message.from;
 
+  // 🔐 asegurar sesión
+  if (!userSessions[from]) {
+    userSessions[from] = { type: "MENU" };
+  }
+
+  const currentSession = userSessions[from];
+
   // ====================
-  // MENSAJES DE TEXTO
+  // TEXTO
   // ====================
   if (message.type === "text") {
     const rawText = message.text.body.trim();
     const text = normalizeText(rawText);
 
-    // ====================
-    // FLUJO DE CITAS
-    // ====================
-    if (userSessions[from]?.type === "APPOINTMENT") {
+    // ===== CITAS =====
+    if (currentSession.type === "APPOINTMENT") {
       return handleAppointmentFlow(from, rawText);
     }
 
-    // ====================
-    // CONSULTA CON IA (SIN FEEDBACK)
-    // ====================
-    if (userSessions[from]?.type === "CONSULTATION") {
-      let responseText;
-
-      try {
-        responseText = await askOpenAI(rawText);
-      } catch (e) {
-        responseText =
-          "⚠️ No pude procesar tu consulta en este momento. Si los síntomas continúan, acude a un veterinario.";
-      }
-
-      // Respondemos y TERMINAMOS el flujo
-      await sendTextMessage(from, responseText);
-
-      // Cerramos sesión para evitar loops
-      delete userSessions[from];
-      return;
+    // ===== FEEDBACK =====
+    if (currentSession.type === "FEEDBACK") {
+      return handleFeedbackText(from, rawText);
     }
 
-    // ====================
-    // SALUDO → MENÚ (UNA SOLA VEZ)
-    // ====================
-    if (isGreetings(text) && !userSessions[from]) {
-      userSessions[from] = { type: "MENU_USED" };
+    // ===== CONSULTA =====
+    if (currentSession.type === "CONSULTATION") {
+      let aiResponse;
 
+      try {
+        aiResponse = await askOpenAI(rawText);
+      } catch {
+        aiResponse = "⚠️ No pude procesar tu consulta automáticamente.";
+      }
+
+      await sendTextMessage(from, aiResponse);
+
+      // 🚨 EMERGENCIA DETECTADA
+      if (isEmergencyResponse(text)) {
+        await sendTextMessage(
+          from,
+          "🚨 *EMERGENCIA DETECTADA*\nTe comparto el contacto de Medpet:"
+        );
+        await sendEmergencyContact(from);
+        userSessions[from] = { type: "MENU" };
+        return;
+      }
+
+      // 👉 feedback
+      userSessions[from] = { type: "FEEDBACK" };
+      return sendFeedbackMenu(from);
+    }
+
+    // ===== SALUDO =====
+    if (isGreetings(text)) {
+      userSessions[from] = { type: "MENU" };
       return sendButtonMessage(
         from,
-        `Hola ${name} 👋 Bienvenido a nuestra veterinaria online\n\n¿En qué puedo ayudarte?`,
-        [
-          { id: "BTN_1", title: "Agendar cita" },
-          { id: "BTN_2", title: "Consultar" },
-          { id: "BTN_3", title: "Ubicación" },
-        ]
+        `Hola ${name} 👋 Bienvenido a Medpet tu veterinaria online favorita 🐾\n\n¿En qué puedo ayudarte?`
       );
     }
 
@@ -89,40 +123,48 @@ export const handleMessage = async (message, name = "amigo") => {
       message.interactive?.button_reply?.id ||
       message.interactive?.list_reply?.id;
 
-    // Agendar cita
-    if (buttonId === "BTN_1") {
-      userSessions[from] = { type: "APPOINTMENT" };
-      return startAppointmentFlow(from);
-    }
+    if (!buttonId) return;
 
-    // Consultar
-    if (buttonId === "BTN_2") {
-      userSessions[from] = { type: "CONSULTATION" };
-      return sendTextMessage(
-        from,
-        "🩺 Escribe qué le ocurre a tu mascota y te ayudaré."
-      );
-    }
+    switch (currentSession.type) {
 
-    // Ubicación
-    if (buttonId === "BTN_3") {
-      await sendLocationMessage(
-        from,
-        4.710989, 
-        -74.072090,
-        "📍 Calle Principal 123\n⏰ Horario: 9am – 6pm"
-      );
-      return sendTextMessage(
-        from,
-        "Nuestra veterinaria está ubicada en Calle Principal 123. Estamos abiertos de lunes a viernes de 9am a 6pm. https://www.google.com/maps?q=4.710989,-74.072090"
-      );
-    }
+      // ===== MENÚ PRINCIPAL =====
+      case "MENU":
+        switch (buttonId) {
 
-    // Botones del flujo de citas
-    if (userSessions[from]?.type === "APPOINTMENT") {
-      return handleAppointmentButtons(from, buttonId);
-    }
+          case "BTN_1": // CITA
+            userSessions[from] = { type: "APPOINTMENT" };
+            return startAppointmentFlow(from);
 
-    return;
+          case "BTN_2": // CONSULTA
+            userSessions[from] = { type: "CONSULTATION" };
+            return sendTextMessage(
+              from,
+              "🩺 Describe el problema de tu mascota."
+            );
+
+          case "BTN_3": // UBICACIÓN
+            await sendLocationMessage(
+              from,
+              4.710989,
+              -74.072090,
+              "Veterinaria Medpet"
+            );
+            await sendTextMessage(
+              from,
+              "Estamos en la calle Principal 123."
+            );
+            userSessions[from] = { type: "MENU" };
+            return;
+        }
+        return;
+
+      // ===== CITAS =====
+      case "APPOINTMENT":
+        return handleAppointmentButtons(from, buttonId);
+
+      default:
+        userSessions[from] = { type: "MENU" };
+        return;
+    }
   }
 };
