@@ -1,57 +1,43 @@
-// src/services/whatsappService.js
 import { sendToWhatsApp } from "../httpRequest/sendToWhatsApp.js";
 
 // ================================
 // MENSAJE DE TEXTO
 // ================================
 export const sendTextMessage = async (to, text) => {
-  const body = {
+  return sendToWhatsApp({
     messaging_product: "whatsapp",
     to,
-    text: {
-      body: text,
-    },
-  };
-
-  return sendToWhatsApp(body);
+    text: { body: text },
+  });
 };
 
 // ================================
-// MENSAJE CON BOTONES
+// MENÚ CON BOTONES (MÁXIMO 3)
 // ================================
 export const sendButtonMessage = async (to, text) => {
-  const payload = {
+  return sendToWhatsApp({
     messaging_product: "whatsapp",
     to,
     type: "interactive",
     interactive: {
       type: "button",
-      body: {
-        text: text || "Elige una opción 👇",
-      },
+      body: { text },
       action: {
         buttons: [
-          { type: "reply", reply: { id: "BTN_1", title: "Agendar una cita" } },
+          { type: "reply", reply: { id: "BTN_1", title: "Agendar cita" } },
           { type: "reply", reply: { id: "BTN_2", title: "Consultar" } },
           { type: "reply", reply: { id: "BTN_3", title: "Ubicación" } },
         ],
       },
     },
-  };
-
-  return sendToWhatsApp(payload);
+  });
 };
 
 // ================================
-// MENSAJE DE UBICACIÓN
+// UBICACIÓN
 // ================================
-export const sendLocationMessage = async (
-  to,
-  latitude,
-  longitude,
-  name = "Veterinaria MedPet"
-) => {
-  const body = {
+export const sendLocationMessage = async (to, latitude, longitude, name) => {
+  return sendToWhatsApp({
     messaging_product: "whatsapp",
     to,
     type: "location",
@@ -59,9 +45,33 @@ export const sendLocationMessage = async (
       latitude,
       longitude,
       name,
-      address: "Calle Principal 123, Ciudad, País",
+      address: "Calle Principal 123",
     },
-  };
+  });
+};
 
-  return sendToWhatsApp(body);
+// ================================
+// ✅ CONTACTO (ESTRUCTURA VÁLIDA)
+// ================================
+export const sendEmergencyContact = async (to) => {
+  return sendToWhatsApp({
+    messaging_product: "whatsapp",
+    to,
+    type: "contacts",
+    contacts: [
+      {
+        name: {
+          formatted_name: "MedPet Emergencias",
+          first_name: "MedPet",
+        },
+        phones: [
+          {
+            phone: "573001234567", // ⚠️ SIN +
+            wa_id: "573001234567",
+            type: "WORK",
+          },
+        ],
+      },
+    ],
+  });
 };
