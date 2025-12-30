@@ -20,6 +20,9 @@ No hagas preguntas.
 Responde solo la consulta.
 `;
 
+// Verifica que la clave API esté cargada
+console.log("OPENAI_API_KEY:", OPENAI_API_KEY?.slice(0, 8));
+
 // Función principal para consultar a ChatGPT
 export const askOpenAI = async (message) => {
   try {
