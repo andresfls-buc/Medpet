@@ -7,7 +7,7 @@ import { userSessions } from "../utils/userSessions.js";
 // ================================
 export const sendFeedbackMenu = async (to) => {
   const message = `
-¿Deseas hacer algo más?
+¿Te fue util la respuesta?
 
 1️⃣ Si fue útil  
 2️⃣ Hacer otra consulta  
@@ -41,7 +41,7 @@ export const handleFeedbackText = async (from, text) => {
     case "3":
       await sendTextMessage(
         from,
-        "🚨 *Contacto de emergencias MedPet*"
+        "🚨 *Contacto de emergencias Medpet*"
       );
 
       await sendEmergencyContact(from);
