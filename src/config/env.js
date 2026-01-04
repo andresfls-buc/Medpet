@@ -6,4 +6,5 @@ export const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 export const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 export const API_VERSION = process.env.API_VERSION || "v22.0";
 export const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+export const WHATSAPP_BASE_URL = process.env.WHATSAPP_BASE_URL || "https://graph.facebook.com";
 

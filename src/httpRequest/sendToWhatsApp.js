@@ -1,13 +1,14 @@
 // src/httpRequest/sendToWhatsApp.js
 import fetch from "node-fetch";
 import {
+  WHATSAPP_BASE_URL,
   WHATSAPP_TOKEN,
   PHONE_NUMBER_ID,
   API_VERSION,
 } from "../config/env.js";
 
 // Base URL de la API de WhatsApp
-const BASE_URL = `https://graph.facebook.com/${API_VERSION}`;
+const BASE_URL = `${WHATSAPP_BASE_URL}/${API_VERSION}`;
 
 /**
  * Función única para enviar requests a la API de WhatsApp
