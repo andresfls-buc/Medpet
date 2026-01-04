@@ -1,18 +1,22 @@
 import express from "express";
 import webhookRoutes from "./routes/webhookRoutes.js";
 
-const app = express(); // 🔴 PRIMERO crear app
+const app = express();
+
+// 🔹 FIX CRÍTICO: fallback de puerto
+const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 
-// Health check
+// Health check (Railway + debug)
 app.get("/", (req, res) => {
   res.status(200).send("OK");
 });
 
-// Rutas
+// Webhook
 app.use("/webhook", webhookRoutes);
 
-app.listen(process.env.PORT, () => {
-  console.log(`Listening on port ${process.env.PORT}`);
+// Start server
+app.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}`);
 });
