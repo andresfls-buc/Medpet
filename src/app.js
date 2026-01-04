@@ -1,13 +1,18 @@
 import express from "express";
 import webhookRoutes from "./routes/webhookRoutes.js";
-import { PORT } from "./config/env.js";
 
-const app = express();
+const app = express(); // 🔴 PRIMERO crear app
+
 app.use(express.json());
 
-// Rutas
-app.use("/", webhookRoutes);
+// Health check
+app.get("/", (req, res) => {
+  res.status(200).send("OK");
+});
 
-app.listen(PORT, () => {
-  console.log(` Listening on port ${PORT}`);
+// Rutas
+app.use("/webhook", webhookRoutes);
+
+app.listen(process.env.PORT, () => {
+  console.log(`Listening on port ${process.env.PORT}`);
 });
