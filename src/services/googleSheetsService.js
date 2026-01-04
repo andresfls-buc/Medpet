@@ -68,28 +68,19 @@ async function addRowToSheet(auth, spreadsheetId, values) {
 */
 const appendToSheet = async (data) => {
   try {
-    // Crea la autenticación usando una cuenta de servicio
-    const auth = new google.auth.GoogleAuth({
-      // Ruta al archivo credentials.json
-      keyFile: path.join(
-        process.cwd(),
-        "src/credentials",
-        "credentials.json"
-      ),
-
-      // Permiso para leer y escribir en Google Sheets
+    // 🔹 CAMBIO: AUTENTICACIÓN DIRECTA CON VARIABLES DE ENTORNO
+    // Ya no se usa keyFile ni credentials.json porque no existe en Railway
+    const auth = new google.auth.JWT({
+      email: process.env.GOOGLE_CLIENT_EMAIL,
+      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), // Se reemplazan los \n escapados por saltos de línea reales
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
 
-    // Obtiene el cliente autenticado
-    const authClient = await auth.getClient();
-
     // ID del Google Sheet donde se guardan las citas
-    const spreadsheetId =
-      "1VD3_7K6TAzKdKv7INfxFsRVsXDJqyFXrtGcRcVVIDdk";
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
     // Inserta la fila en la posición correcta
-    await addRowToSheet(authClient, spreadsheetId, data);
+    await addRowToSheet(auth, spreadsheetId, data);
 
     // Confirmación interna
     return "Datos agregados correctamente";
@@ -100,4 +91,3 @@ const appendToSheet = async (data) => {
 
 // Exporta la función para usarla en appointmentFlow.js
 export default appendToSheet;
-
