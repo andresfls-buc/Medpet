@@ -79,6 +79,9 @@ const appendToSheet = async (data) => {
     // ID del Google Sheet donde se guardan las citas
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
+    // Confirmación de autenticación
+    console.log("AUTH OK, escribiendo en:", spreadsheetId);
+
     // Inserta la fila en la posición correcta
     await addRowToSheet(auth, spreadsheetId, data);
 
